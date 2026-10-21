@@ -1,0 +1,207 @@
+diff --git a/runner/src/desktop/host_main.c b/runner/src/desktop/host_main.c
+index ff3252b..d2547cc 100644
+--- a/runner/src/desktop/host_main.c
++++ b/runner/src/desktop/host_main.c
+@@ -2630,7 +2630,7 @@ static void LauncherSeed(RecompLauncherCSettings *ls, RecompLauncherCGameInfo *g
+    * RendererApply, the vsync flags at presenter creation, and
+    * snes_runahead_run_frame in the frame loop). */
+   ls->frame_blend   = g_config.frame_blend ? 1 : 0;
+-  ls->run_ahead     = g_config.run_ahead;
++  ls->run_ahead     = SNESRECOMP_DISABLE_RUNAHEAD ? 0 : g_config.run_ahead;
+   ls->vsync         = g_config.vsync == kSnesVSync_Adaptive
+                           ? RECOMP_LAUNCHER_VSYNC_ADAPTIVE
+                           : g_config.vsync == kSnesVSync_Off
+@@ -2690,7 +2690,7 @@ static void LauncherSeed(RecompLauncherCSettings *ls, RecompLauncherCGameInfo *g
+   /* Rewind rows. The runtime has always had the ring; without this the
+    * player has no way to size it or switch it off. */
+   gi->has_rewind_depth = game->rewind_settings ? 1 : 0;
+-  gi->has_run_ahead    = 1;   /* the runtime snapshots a machine in a frame */
++  gi->has_run_ahead    = !SNESRECOMP_DISABLE_RUNAHEAD;
+   gi->has_vsync        = 1;
+   gi->has_renderer     = 1;
+   RendererEnumerate();
+@@ -2754,7 +2754,7 @@ static void LauncherCommit(const RecompLauncherCSettings *ls, const char *config
+   g_config.gamepad_deadzone    = (ls->deadzone[0] * 32767 + 50) / 100;
+   g_config.skip_launcher       = ls->skip_launcher != 0;
+   g_config.frame_blend         = ls->frame_blend != 0;
+-  g_config.run_ahead           = ls->run_ahead;
++  g_config.run_ahead           = SNESRECOMP_DISABLE_RUNAHEAD ? 0 : ls->run_ahead;
+   if (game->rewind_settings) {
+     g_config.rewind_enabled  = ls->rewind_enabled != 0;
+     if (ls->rewind_depth > 0)    g_config.rewind_depth = ls->rewind_depth;
+@@ -3544,6 +3544,8 @@ error_reading:;
+    * override wins, for a one-off comparison without editing the file. */
+   snes_runahead_set_frames(g_config.run_ahead);
+   snes_runahead_configure();
++  if (SNESRECOMP_DISABLE_RUNAHEAD)
++    g_config.run_ahead = 0;
+ 
+ #ifdef ENABLE_ORACLE_BACKEND
+   if (g_config.enable_snes9x_oracle) {
+diff --git a/runner/src/snes/ppu.c b/runner/src/snes/ppu.c
+index 25dcfe0..d3d4536 100644
+--- a/runner/src/snes/ppu.c
++++ b/runner/src/snes/ppu.c
+@@ -2292,6 +2292,11 @@ static void PpuDrawBackgrounds(Ppu *ppu, int y, bool sub) {
+     if (ppu->lineHasSprites)
+       PpuDrawSprites(ppu, y, sub, true);
+ 
++    if (snes_frame_counter == 1469 && y == 171) {
++      fprintf(stderr, "[BG y=171 f=1469 sub=%d] lineHasSprites=%d obj[60]=0x%04X bg[60]=0x%04X\n",
++              sub, ppu->lineHasSprites, ppu->objBuffer.data[60 + kPpuExtraLeftRight], ppu->bgBuffers[sub].data[60 + kPpuExtraLeftRight]);
++    }
++
+     if (ppu->wsMode2CaptureLayer) {
+       PpuCaptureBackground_4bpp(ppu, y, sub, 0);
+       PpuCaptureBackground_4bpp(ppu, y, sub, 1);
+@@ -2304,12 +2309,22 @@ static void PpuDrawBackgrounds(Ppu *ppu, int y, bool sub) {
+         mosaic_size && PPU_mosaicEnabled(ppu, 0));
+     PpuFinishBackgroundOverlay(ppu, y, sub, 0, layerbuf);
+ 
++    if (snes_frame_counter == 1469 && y == 171) {
++      fprintf(stderr, "[BG y=171 f=1469 sub=%d] after BG1: bg[60]=0x%04X\n",
++              sub, ppu->bgBuffers[sub].data[60 + kPpuExtraLeftRight]);
++    }
++
+     layerbuf = PpuBeginBackgroundOverlay(ppu, y, sub, 1);
+     PpuDrawBackground_4bpp_policy(
+         ppu, layerbuf, y, sub, 1, 0xb100, 0x7100,
+         mosaic_size && PPU_mosaicEnabled(ppu, 1));
+     PpuFinishBackgroundOverlay(ppu, y, sub, 1, layerbuf);
+ 
++    if (snes_frame_counter == 1469 && y == 171) {
++      fprintf(stderr, "[BG y=171 f=1469 sub=%d] after BG2: bg[60]=0x%04X\n",
++              sub, ppu->bgBuffers[sub].data[60 + kPpuExtraLeftRight]);
++    }
++
+     uint bg3prio = PPU_bg3priority(ppu) ? 0xf200 : 0x3200;
+     layerbuf = PpuBeginBackgroundOverlay(ppu, y, sub, 2);
+     PpuDrawBackground_2bpp_policy(
+@@ -2865,6 +2880,19 @@ static bool ppu_evaluateSprites(Ppu* ppu, int line) {
+     index += 2;
+   }
+ 
++  if (snes_frame_counter == 1468 || snes_frame_counter == 1469 || snes_frame_counter == 1470) {
++    if (line == 170) {
++      fprintf(stderr, "[EVAL line=170 f=%d] spritesFound=%d objSize=%d obsel=0x%02X oamadd=0x%02X%02X\n",
++              snes_frame_counter, spritesFound, PPU_objSize(ppu), ppu->obsel, ppu->oamaddh, ppu->oamaddl);
++      for (int s = 0; s < spritesFound; s++) {
++        uint8_t idx = foundSprites[s];
++        fprintf(stderr, "   found[%d]: slot=%d x=%d y=%d sz=%d oam1=0x%04X\n",
++                s, idx >> 1, PpuDecodeOamX(ppu, idx), ppu->oam[idx] >> 8,
++                (ppu->highOam[idx >> 3] >> ((idx & 7) + 1)) & 1, ppu->oam[idx+1]);
++      }
++    }
++  }
++
+   for(int i = spritesFound; i > 0; i--) {
+     index = foundSprites[i - 1];
+     uint8_t row = line - (ppu->oam[index] >> 8);
+@@ -2902,6 +2930,10 @@ static bool ppu_evaluateSprites(Ppu* ppu, int line) {
+                      (((oam1 & 0xf) + (usedCol >> 3)) & 0xf);
+             const uint16 *addr = &PpuRenderVram(ppu)[(objAdr + usedTile * 16 + (row & 0x7)) & 0x7fff];
+             uint32 plane = addr[0] | addr[8] << 16;
++            if ((snes_frame_counter == 1468 || snes_frame_counter == 1469 || snes_frame_counter == 1470) && line == 170) {
++              fprintf(stderr, "   [TILE slot=%d col=%d] row=%d usedTile=0x%02X a0=0x%04X a8=0x%04X plane=0x%08X\n",
++                      index >> 1, col, row, usedTile, addr[0], addr[8], plane);
++            }
+             int px_left = IntMax(-(col + x + kPpuExtraLeftRight), 0);
+             int px_right = IntMin(256 + kPpuExtraLeftRight - (col + x), 8);
+             PpuZbufType *dst = ppu->objBuffer.data + col + x + px_left + kPpuExtraLeftRight;
+diff --git a/runner/src/snes/snes.c b/runner/src/snes/snes.c
+index 5c03cfe..384fec6 100644
+--- a/runner/src/snes/snes.c
++++ b/runner/src/snes/snes.c
+@@ -24,6 +24,12 @@
+ #include "../ppu_dma_trace.h"
+ 
+ int snes_frame_counter;
++static SnesBeamLineHook s_beam_line_hook;
++
++void snes_set_beam_line_hook(SnesBeamLineHook hook) {
++  s_beam_line_hook = hook;
++}
++
+ static const double apuCyclesPerMaster = (32040 * 32) / (1364 * 262 * 60.0);
+ 
+ bool snes_next_irq_master(const Snes *snes, uint64_t now, uint64_t *out) {
+@@ -463,6 +469,7 @@ static uint32_t snes_advance_beam(Snes *snes, uint32_t clocks, bool check_irq) {
+           h = 0; v++; if (v >= 262u) v = 0;
+           if (v == 225u) { snes->rdnmiPending = true; ppu_rasterFieldBoundary(); }
+           if (v == 0u) snes->rdnmiPending = false;
++          if (s_beam_line_hook) s_beam_line_hook(snes, (uint16_t)v);
+         }
+         snes->hPos = (uint16_t)h;
+         snes->vPos = (uint16_t)v;
+@@ -509,6 +516,7 @@ static uint32_t snes_advance_beam(Snes *snes, uint32_t clocks, bool check_irq) {
+         }
+         snes->dbgLatchedThisField = 0;
+       }
++      if (s_beam_line_hook) s_beam_line_hook(snes, (uint16_t)v);
+     }
+   }
+   snes->hPos = (uint16_t)h;
+diff --git a/runner/src/snes/snes.h b/runner/src/snes/snes.h
+index 013e785..b3f3ed0 100644
+--- a/runner/src/snes/snes.h
++++ b/runner/src/snes/snes.h
+@@ -10,6 +10,10 @@
+ 
+ typedef struct Snes Snes;
+ typedef void (*SnesMasterClockChargeHook)(Snes *snes, uint64_t clocks);
++/* Host observation only: called once when the beam enters a new scanline.
++ * The explicit line is authoritative; hPos/vPos are committed after the walk.
++ * Hooks are host policy and are not part of the guest savestate. */
++typedef void (*SnesBeamLineHook)(const Snes *snes, uint16_t line);
+ typedef void (*SnesWramWriteLogHook)(uint32_t ram_off, uint8_t value,
+                                      const char *via);
+ 
+@@ -146,6 +150,7 @@ void snes_sync_master_clock(Snes *snes, uint64_t master_clock);
+  * step that can jump over h=1024 and drop that line's HDMA transfer (SimCity
+  * scenario view: every 4th scanline one line late, issue #63). */
+ void snes_set_master_clock_charge_hook(SnesMasterClockChargeHook hook);
++void snes_set_beam_line_hook(SnesBeamLineHook hook);
+ /* Notified on every direct WRAM store that bypasses cpu_write8/16 (WMDATA
+  * $2180, snes_write's WRAM and mirror stores, i.e. DMA A-bus writes). */
+ void snes_set_wram_write_log_hook(SnesWramWriteLogHook hook);
+diff --git a/runner/src/snes_runahead.c b/runner/src/snes_runahead.c
+index e00739b..d9e8677 100644
+--- a/runner/src/snes_runahead.c
++++ b/runner/src/snes_runahead.c
+@@ -24,6 +24,11 @@ static void    *s_capture_ctx;
+ 
+ void snes_runahead_set_frames(int frames)
+ {
++#if SNESRECOMP_DISABLE_RUNAHEAD
++    if (frames > 0)
++        fprintf(stderr, "[runahead] disabled by this game build; ignoring %d frame(s)\n", frames);
++    frames = 0;
++#endif
+     if (frames < 0) frames = 0;
+     if (frames > SNES_RUNAHEAD_MAX) frames = SNES_RUNAHEAD_MAX;
+     if (frames == s_frames) return;
+@@ -49,6 +54,9 @@ void snes_runahead_configure(void)
+ 
+ int snes_runahead_active(void)
+ {
++#if SNESRECOMP_DISABLE_RUNAHEAD
++    return 0;
++#endif
+     if (s_frames <= 0) return 0;
+     if (!g_snes) return 0;
+     /* Offline only. See the header: two peers cannot each speculate about a
+diff --git a/runner/src/snes_runahead.h b/runner/src/snes_runahead.h
+index a9e5138..e16042a 100644
+--- a/runner/src/snes_runahead.h
++++ b/runner/src/snes_runahead.h
+@@ -3,6 +3,10 @@
+ 
+ #include <stdint.h>
+ 
++#ifndef SNESRECOMP_DISABLE_RUNAHEAD
++#define SNESRECOMP_DISABLE_RUNAHEAD 0
++#endif
++
+ /*
+  * Run-ahead: hide N frames of the game's own input latency.
+  *

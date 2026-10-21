@@ -1,0 +1,17 @@
+# ROM identity for Hagane - The Final Conflict — the single source of truth.
+#
+# Read by three consumers, so a revision change is made once, here:
+#   - the build   (CMake generates snesrecomp_rom_identity.h from this file)
+#   - tools/regen.sh
+#   - .github/workflows/release.yml
+
+display_name    = Hagane - The Final Conflict
+rom_file        = Hagane - The Final Conflict (USA).sfc
+expected_crc32  = 8e0a7034
+expected_md5    = 44cb6bbbb233bc5d602d54fd418232f1
+expected_sha1   = 380046437930d0e39cebd662ad1657e20ac4c9c8
+expected_sha256 = 5a6deb5617e86a9f4b981031e939510e30c5c8ad047f5f012e40442113fd28c2
+rom_size        = 2097152
+mapping         = hirom
+region          = USA
+game_id         = hagane-the-final-conflict-usa
