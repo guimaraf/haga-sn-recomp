@@ -65,17 +65,17 @@ if (Test-Path $licJuice) {
     Copy-Item $licJuice -Destination (Join-Path $releaseDir 'licenses\libjuice-LICENSE.txt') -Force
 }
 
-# 5. Instrucoes de uso (LEIA-ME.txt)
+# 5. Instructions (README.txt)
 $readmeContent = @"
 Hagane: The Final Conflict SNES Recomp — Release v$versionRaw
 
-COMO JOGAR:
-1. Execute "Hagane recomp.exe".
-2. A ROM oficial nao esta inclusa nesta distribuicao.
-3. Na primeira execucao, selecione o arquivo da ROM "Hagane - The Final Conflict (USA).sfc" através da interface do launcher ou coloque a ROM diretamente na mesma pasta do executável.
-4. As configuracoes de video, controles e salvamento serao criadas automaticamente.
+HOW TO PLAY:
+1. Run "Hagane recomp.exe".
+2. The official game ROM is NOT included in this distribution.
+3. On first startup, select your legally dumped ROM file ("Hagane - The Final Conflict (USA).sfc") via the launcher file dialog, or place the ROM directly in the same folder as the executable.
+4. Video options, control remapping, and save files will be created automatically in the game directory.
 "@
-Set-Content -Path (Join-Path $releaseDir 'LEIA-ME.txt') -Value $readmeContent -Encoding utf8
+Set-Content -Path (Join-Path $releaseDir 'README.txt') -Value $readmeContent -Encoding utf8
 
 # 6. Remocao estrita de arquivos nao permitidos
 Get-ChildItem -Path $releaseDir -Recurse -Include *.sfc, *.smc, *.srm, *.log, *.tmp, rom.cfg, config.ini, last_run_report.json | Remove-Item -Force
