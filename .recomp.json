@@ -1,0 +1,31 @@
+{
+  "$schema": "https://recomp.fyi/schema/v1.json",
+  "game": "Hagane: The Final Conflict",
+  "wikidata": "Q3782393",
+  "system": "SNES",
+  "type": "recomp",
+  "project": "Hagane Recomp",
+  "status": "released",
+  "targets": [
+    "Windows"
+  ],
+  "toolchain": "snesrecomp",
+  "original": {
+    "region": "USA",
+    "serial": "SNS-AHGE-USA",
+    "sha1": "380046437930d0e39cebd662ad1657e20ac4c9c8"
+  },
+  "maintainers": [
+    {
+      "name": "guimaraf",
+      "link": "https://github.com/guimaraf"
+    }
+  ],
+  "links": [
+    {
+      "label": "GitHub",
+      "url": "https://github.com/guimaraf/haga-sn-recomp"
+    }
+  ],
+  "notes": "Native static recompilation port of Hagane: The Final Conflict (USA) powered by the SNESRecomp framework."
+}
