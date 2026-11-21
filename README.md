@@ -1,66 +1,87 @@
 # Hagane: The Final Conflict — SNESRecomp Native Port
 
-Port nativo por recompilação estática de **Hagane - The Final Conflict** (USA) utilizando o framework **SNESRecomp**.
+Native static recompilation port of **Hagane: The Final Conflict** (USA) powered by the **SNESRecomp** framework.
 
-## Características
-- Execução nativa x86_64 via SNESRecomp.
-- Launcher gráfico integrado baseado em Dear ImGui (`recomp-ui`) com suporte a remapeamento de controles, opções de vídeo, áudio e hotkeys.
-- Desativação de run-ahead (`SNESRECOMP_DISABLE_RUNAHEAD=1`) para precisão e estabilidade de sincronismo.
-- Gancho de scanline (`snes_set_beam_line_hook`) integrado ao loop do jogo para captura e renderização fiel.
+## Features
+- Native x86_64 execution via SNESRecomp.
+- Integrated graphical launcher based on Dear ImGui (`recomp-ui`) with support for gamepad remapping, video/audio configuration, and system hotkeys.
+- Online Netplay support via ICE/libjuice with built-in lobby browser.
+- Run-ahead explicitly disabled (`SNESRECOMP_DISABLE_RUNAHEAD=1`) for timing accuracy and netplay stability.
+- Scanline beam hook (`snes_set_beam_line_hook`) integrated into the game loop for authentic visual rendering.
+- RecompLauncher & Easy Setup compatibility (Zero-ROM distribution, persistent SRAM, launcher settings).
 
-## Requisitos da ROM
-- **Título**: Hagane - The Final Conflict (USA)
-- **Tamanho**: 2.097.152 bytes (2048 KB)
+## ROM Requirements
+- **Title**: Hagane - The Final Conflict (USA)
+- **File Size**: 2,097,152 bytes (2048 KB)
 - **CRC32**: `8e0a7034`
-- **SHA256**: `5a6deb5617e86a9f4b981031e939510e30c5c8ad047f5f012e40442113fd28c2`
-- **Mapeamento**: HiROM
+- **SHA-1**: `380046437930d0e39cebd662ad1657e20ac4c9c8`
+- **SHA-256**: `5a6deb5617e86a9f4b981031e939510e30c5c8ad047f5f012e40442113fd28c2`
+- **Mapping**: HiROM
+- **Accepted Formats**: `.sfc`, `.smc` (512-byte copier header auto-stripped), `.bin`
 
-Coloque a ROM com o nome `Hagane - The Final Conflict (USA).sfc` na raiz do projeto (ou configure via `rom.cfg` / launcher).
+Place your legally dumped ROM named `Hagane - The Final Conflict (USA).sfc` in the project root, or select it via RecompLauncher / the built-in file picker.
 
-## Clonagem e Submódulos
+## How to Play
 
-Este projeto utiliza submódulos oficiais para o framework SNESRecomp e para o lançador recomp-ui.
+### Via RecompLauncher
+1. Install and launch the game through **RecompLauncher**.
+2. Select your legally obtained ROM when prompted by Easy Setup.
+3. Configure video, VSync, and launcher preferences directly within the launcher interface.
+
+### Standalone / Direct Execution
+1. Run `Hagane recomp.exe`.
+2. On first run, select your ROM file via the built-in Dear ImGui launcher, or place the ROM next to the executable.
+3. Save data is stored automatically in the `saves/` folder.
+
+## Cloning and Submodules
+
+This project uses git submodules for the SNESRecomp framework and the recomp-ui launcher.
 
 ```bash
 git clone --recurse-submodules https://github.com/guimaraf/haga-sn-recomp.git
 ```
 
-Se clonado sem `--recurse-submodules`:
+If cloned without `--recurse-submodules`:
 ```bash
 git submodule update --init --recursive
 ```
 
-### Aplicação dos Patches do Framework
+### Applying Framework Patches
 
-Após clonar ou atualizar os submódulos, aplique os patches específicos do projeto:
+After cloning or updating submodules, apply project-specific patches:
 
-**No Windows (PowerShell):**
+**On Windows (PowerShell):**
 ```powershell
 .\tools\apply-patches.ps1
 ```
 
-**No Linux / macOS / MSYS2 (Bash):**
+**On Linux / macOS / MSYS2 (Bash):**
 ```bash
 bash scripts/apply-framework-patches.sh
 ```
 
-## Geração do Código C e Compilação
+## Building from Source
 
-### Dependências Requisitadas
+### Prerequisites
 - CMake 3.20+
-- Compilador C/C++ (MSVC 2022 / Clang / GCC)
+- C/C++ Compiler (MSVC 2022 / Clang / GCC) with C11 support
 - Ninja
 - Python 3.10+
-- Dependências compartilhadas (SDL3, Lua 5.4.9, libjuice 1.7.2) na pasta `dependences/` ou fornecidas pelo workspace pai.
+- Shared dependencies (SDL3, Lua 5.4.9, libjuice 1.7.2) located in the workspace `dependences/` folder.
 
-### Passos de Build
+### Build Steps
 
-1. **Gerar o código C a partir da ROM:**
+1. **Generate C code from the ROM:**
    ```powershell
-   .\tools\regen.ps1 -Rom "caminho\para\Hagane - The Final Conflict (USA).sfc"
+   .\tools\regen.ps1 -Rom "path\to\Hagane - The Final Conflict (USA).sfc"
    ```
 
-2. **Compilar:**
+2. **Compile the release binary:**
    ```powershell
    .\tools\build.ps1
+   ```
+
+3. **Package for distribution:**
+   ```powershell
+   .\tools\package_release.ps1
    ```

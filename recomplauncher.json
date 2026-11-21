@@ -1,0 +1,162 @@
+{
+  "$schema": "https://recomplauncher.com/schema/recomplauncher.json",
+  "format": 1,
+  "name": "Hagane: The Final Conflict Recomp",
+  "repo": "guimaraf/haga-sn-recomp",
+  "inputs": [
+    {
+      "id": "rom",
+      "label": "Hagane - The Final Conflict (USA) ROM (.sfc / .smc)",
+      "role": "game",
+      "formats": [
+        {
+          "type": "file",
+          "extensions": [
+            "sfc",
+            "smc",
+            "bin"
+          ]
+        }
+      ]
+    }
+  ],
+  "start": {
+    "program": [
+      "Hagane recomp.exe"
+    ],
+    "args": [
+      "--rom",
+      "{input:rom}"
+    ]
+  },
+  "config": [
+    {
+      "id": "main",
+      "format": "ini",
+      "file": [
+        {
+          "path": "{install}/config.ini"
+        }
+      ],
+      "ensure": {
+        "General/Autosave": "0",
+        "General/SkipLauncher": "0",
+        "Graphics/Fullscreen": "0",
+        "Graphics/DisplayAspect": "4:3",
+        "Graphics/VSync": "1"
+      }
+    }
+  ],
+  "settings": [
+    {
+      "id": "fullscreen",
+      "label": "Modo de Tela",
+      "in": "main",
+      "choices": [
+        {
+          "label": "Janela",
+          "set": {
+            "Graphics/Fullscreen": "0"
+          }
+        },
+        {
+          "label": "Tela Cheia (Desktop)",
+          "set": {
+            "Graphics/Fullscreen": "1"
+          }
+        },
+        {
+          "label": "Tela Cheia Exclusiva",
+          "set": {
+            "Graphics/Fullscreen": "2"
+          }
+        }
+      ],
+      "defaults": {
+        "Graphics/Fullscreen": "0"
+      }
+    },
+    {
+      "id": "aspect_ratio",
+      "label": "Proporção de Tela",
+      "in": "main",
+      "choices": [
+        {
+          "label": "4:3 (Original SNES CRT)",
+          "set": {
+            "Graphics/DisplayAspect": "4:3"
+          }
+        },
+        {
+          "label": "8:7 (Pixel Aspect Ratio)",
+          "set": {
+            "Graphics/DisplayAspect": "8:7"
+          }
+        },
+        {
+          "label": "16:9 (Widescreen)",
+          "set": {
+            "Graphics/DisplayAspect": "16:9"
+          }
+        }
+      ],
+      "defaults": {
+        "Graphics/DisplayAspect": "4:3"
+      }
+    },
+    {
+      "id": "vsync",
+      "label": "Sincronização Vertical (VSync)",
+      "in": "main",
+      "choices": [
+        {
+          "label": "Ativado (1) - 60 Hz",
+          "set": {
+            "Graphics/VSync": "1"
+          }
+        },
+        {
+          "label": "Desativado (0) - Latência Mínima / Netplay",
+          "set": {
+            "Graphics/VSync": "0"
+          }
+        },
+        {
+          "label": "Adaptativo (2)",
+          "set": {
+            "Graphics/VSync": "2"
+          }
+        }
+      ],
+      "defaults": {
+        "Graphics/VSync": "1"
+      }
+    },
+    {
+      "id": "skip_launcher",
+      "label": "Menu Interno de Pré-Inicialização",
+      "help": "Exibe ou pula a interface Dear ImGui integrada (necessária para hospedar/entrar em lobbies Netplay e configurar controles).",
+      "in": "main",
+      "choices": [
+        {
+          "label": "Pular (Boot Direto)",
+          "set": {
+            "General/SkipLauncher": "1"
+          }
+        },
+        {
+          "label": "Exibir (Lobby Netplay & Controles)",
+          "set": {
+            "General/SkipLauncher": "0"
+          }
+        }
+      ],
+      "defaults": {
+        "General/SkipLauncher": "0"
+      }
+    }
+  ],
+  "saves": [
+    "{install}/saves"
+  ]
+}
